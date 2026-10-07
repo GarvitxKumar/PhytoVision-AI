@@ -1,1 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhytoVision AI — Next-Gen Agronomic Diagnostics</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- TensorFlow.js & Teachable Machine Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #05140b;
+      --bg-card: rgba(12, 35, 20, 0.65);
+      --border-glow: rgba(74, 222, 128, 0.25);
+      --accent-green: #4ade80;
+      --accent-emerald: #10b981;
+      --accent-mint: #a7f3d0;
+      --accent-gold: #fbbf24;
+      --accent-red: #f87171;
+      --text-main: #f0fdf4;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated Nature & Glow Background */
+    .bg-aurora {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      background: 
+        radial-gradient(circle at 15% 20%, rgba(16, 185, 129, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(74, 222, 128, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(5, 46, 22, 0.8) 0%, var(--bg-dark) 100%);
+    }
+
+    /* Ambient Leaves Container */
+    .leaves-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .leaf {
+      position: absolute;
+      color: rgba(74, 222, 128, 0.15);
+      font-size: 1.5rem;
+      animation: floatLeaf 18s linear infinite;
+    }
+
+    @keyframes floatLeaf {
+      0% {
+        transform: translateY(105vh) rotate(0deg) translateX(0);
+        opacity: 0;
+      }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% {
+        transform: translateY(-10vh) rotate(360deg) translateX(100px);
+        opacity: 0;
+      }
+    }
+
+    /* Header & Navbar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 5%;
+      backdrop-filter: blur(12px);
+      background: rgba(5, 20, 11, 0.7);
+      border-bottom: 1px solid var(--border-glow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .logo i {
+      font-size: 1.8rem;
+      filter: drop-shadow(0 0 8px var(--accent-green));
+    }
+
+    nav ul {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+      color: var(--accent-green);
+      text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid var(--border-glow);
+      padding: 0.5rem 1.25rem;
+      border-radius: 50px;
+      color: var(--accent-mint);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.2rem;
+      line-height: 1.2;
+      margin-bottom: 1.2rem;
+      background: linear-gradient(135deg, #ffffff 30%, var(--accent-mint) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      max-width: 750px;
+      margin: 0 auto;
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      line-height: 1.7;
+    }
+
+    /* Glassmorphism Card Style */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+    }
+
+    /* AI Studio Workspace Grid */
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 868px) {
+      .studio-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero h1 { font-size: 2.3rem; }
+      nav { display: none; }
+    }
+
+    /* Input Workspace */
+    .workspace-section h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--accent-mint);
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.3rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn.active {
+      background: var(--accent-emerald);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Upload Box */
+    .upload-area {
+      border: 2px dashed var(--border-glow);
+      border-radius: 16px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+      border-color: var(--accent-green);
+      background: rgba(74, 222, 128, 0.05);
+    }
+
+    .upload-area i {
+      font-size: 2.8rem;
+      color: var(--accent-green);
+      margin-bottom: 1rem;
+    }
+
+    /* Preview Canvas */
+    #preview-container {
+      display: none;
+      position: relative;
+      margin-top: 1.5rem;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-glow);
+      max-height: 320px;
+    }
+
+    #preview-img, #webcam-video {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Results Dashboard */
+    .result-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem;
+    }
+
+    .result-placeholder i {
+      font-size: 3.5rem;
+      color: rgba(74, 222, 128, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .diagnosis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-pill {
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-healthy { background: rgba(74, 222, 128, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .status-diseased { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+    .confidence-item {
+      margin-bottom: 1.2rem;
+    }
+
+    .confidence-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .progress-bar-bg {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-emerald), var(--accent-green));
+      width: 0%;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Treatment Advice Box */
+    .treatment-box {
+      margin-top: 1.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-left: 4px solid var(--accent-gold);
+      padding: 1.25rem;
+      border-radius: 8px;
+    }
+
+    .treatment-box h4 {
+      color: var(--accent-gold);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .treatment-box p {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    /* Presets Section */
+    .preset-title {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .preset-btns {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-glow);
+      color: var(--text-main);
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-btn:hover {
+      background: rgba(74, 222, 128, 0.15);
+      border-color: var(--accent-green);
+    }
+
+    /* Professional Info Sections */
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2rem;
+      color: var(--accent-mint);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-glow);
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent-green);
+      background: rgba(74, 222, 128, 0.03);
+    }
+
+    .feature-card i {
+      font-size: 2rem;
+      color: var(--accent-green);
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h4 {
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ROI Interactive Calculator */
+    .calc-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .calc-container { grid-template-columns: 1fr; }
+    }
+
+    .calc-controls label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .calc-slider {
+      width: 100%;
+      margin-bottom: 1.5rem;
+      accent-color: var(--accent-green);
+    }
+
+    .calc-output {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--accent-green);
+      padding: 2rem;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .calc-output-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      margin: 0.5rem 0;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 3rem;
+      border-top: 1px solid var(--border-glow);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background: rgba(5, 20, 11, 0.9);
+    }
+
+    /* ===== Accuracy upgrade styles ===== */
+    .status-uncertain { background: rgba(251,191,36,0.2); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+    .verdict { font-size: 0.9rem; margin-bottom: 1rem; padding: 0.6rem 0.9rem; border-radius: 8px; background: rgba(255,255,255,0.05); }
+    .verdict.high { border-left: 4px solid var(--accent-green); }
+    .verdict.moderate { border-left: 4px solid var(--accent-gold); }
+    .verdict.low { border-left: 4px solid var(--accent-red); }
+    .notice { font-size: 0.85rem; padding: 0.6rem 0.9rem; margin-bottom: 1rem; border-radius: 8px; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.4); color: var(--accent-gold); }
+    .treatment-box p { margin-bottom: 0.6rem; }
+    .treatment-box strong { color: var(--accent-mint); }
+    .sev-tag { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; margin-right: 0.4rem; background: rgba(255,255,255,0.1); }
+    .sev-High { color: var(--accent-red); } .sev-Moderate { color: var(--accent-gold); } .sev-Low, .sev-None { color: var(--accent-green); }
+    .disclaimer { font-size: 0.78rem !important; color: var(--text-muted) !important; font-style: italic; margin-top: 0.8rem; }
+    .action-btn { margin-top: 0.4rem; background: rgba(74,222,128,0.12); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: inherit; }
+    .action-btn:hover { background: rgba(74,222,128,0.25); }
+    .tips { list-style: none; font-size: 0.85rem; color: var(--text-muted); line-height: 1.8; }
+    .tips li::before { content: '✔ '; color: var(--accent-green); }
+    .upload-area.drag { border-color: var(--accent-green); background: rgba(74,222,128,0.1); }
+    #history-box { margin-top: 1.2rem; font-size: 0.82rem; color: var(--text-muted); }
+    #history-box div { padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; }
+    #model-status { margin-top: 1rem; font-size: 0.85rem; color: var(--accent-mint); }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Nature Background -->
+  <div class="bg-aurora"></div>
+  <div class="leaves-container" id="leaves-bg"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <i class="fa-solid fa-leaf"></i>
+      <span>PhytoVision AI</span>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="#studio">AI Scanner</a></li>
+        <li><a href="#about">Technology</a></li>
+        <li><a href="#uses">Applications</a></li>
+        <li><a href="#science">Judges Panel</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="badge">
+        <i class="fa-solid fa-microchip"></i> Class 11 Science Exhibition Project
+      </div>
+      <h1>Real-Time Botanical Pathology<br>via Computer Vision</h1>
+      <p>
+        An edge-computed neural diagnostic suite empowering farmers and botanists with immediate leaf disease identification, epidemiological risk metrics, and precision agronomic interventions.
+      </p>
+    </section>
+
+    <!-- Interactive AI Studio -->
+    <section id="studio" class="glass-card">
+      <div class="studio-grid">
+        
+        <!-- Input Panel -->
+        <div class="workspace-section">
+          <h3><i class="fa-solid fa-camera-retro"></i> Diagnostic Studio</h3>
+          
+          <div class="tab-buttons">
+            <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">
+              <i class="fa-solid fa-file-arrow-up"></i> File Upload
+            </button>
+            <button class="tab-btn" id="tab-cam" onclick="switchTab('cam')">
+              <i class="fa-solid fa-video"></i> Live Camera
+            </button>
+          </div>
+
+          <!-- File Upload UI -->
+          <div id="file-ui">
+            <div class="upload-area" onclick="document.getElementById('file-input').click()">
+              <i class="fa-solid fa-cloud-sun-plant"></i>
+              <p style="font-weight: 600; margin-bottom: 0.25rem;">Select Leaf Image</p>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Click or drag &amp; drop · JPG, PNG, WEBP (max 10 MB)</p>
+              <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+            </div>
+          </div>
+
+          <!-- Camera UI -->
+          <div id="cam-ui" style="display: none;">
+            <button class="tab-btn active" style="width: 100%; margin-bottom: 1rem;" onclick="startWebcam()">
+              <i class="fa-solid fa-power-off"></i> Activate Camera
+            </button>
+            <video id="webcam-video" autoplay playsinline muted style="display: none; border-radius: 12px;"></video>
+            <button class="tab-btn active" id="capture-btn" style="width: 100%; margin-top: 1rem; display: none;" onclick="captureFrame()">
+              <i class="fa-solid fa-camera"></i> Capture &amp; Diagnose
+            </button>
+          </div>
+
+          <!-- Selected Image Preview -->
+          <div id="preview-container">
+            <img id="preview-img" src="#" alt="Leaf Preview">
+          </div>
+
+          <!-- Photo tips -->
+          <div class="preset-title">📋 Tips for an accurate diagnosis:</div>
+          <ul class="tips">
+            <li>Photograph one leaf, filling most of the frame</li>
+            <li>Use natural daylight, avoid harsh shadows or flash glare</li>
+            <li>Keep the leaf in focus on a plain background</li>
+            <li>Scan 2–3 different affected leaves and compare results</li>
+          </ul>
+        </div>
+
+        <!-- Output / Results Panel -->
+        <div class="workspace-section" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
+          <h3><i class="fa-solid fa-chart-pie"></i> Diagnostic Output</h3>
+          
+          <div id="result-placeholder" class="result-placeholder">
+            <i class="fa-solid fa-network-wired"></i>
+            <p>Upload a leaf photo or use the camera to start diagnosis.</p><p id="model-status"><i class="fa-solid fa-spinner spin"></i> Loading AI model…</p>
+          </div>
+
+          <div id="result-content" style="display: none;">
+            <div class="diagnosis-header">
+              <div>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Primary Diagnosis</span>
+                <h2 id="top-class" style="color: var(--accent-mint); font-size: 1.6rem;">—</h2>
+              </div>
+              <span id="status-pill" class="status-pill status-healthy">Healthy</span>
+            </div>
+
+            <!-- Class Confidence Bars -->
+            <div id="verdict" class="verdict"></div>
+            <div id="quality-warning" class="notice" style="display:none"></div>
+            <div id="confidence-list"></div>
+
+            <!-- Agronomic Treatment Box -->
+            <div id="treatment-advice" class="treatment-box">
+              <h4><i class="fa-solid fa-prescription-bottle-medical"></i> Agronomic Action Plan</h4>
+              <div id="treatment-text">Analyzing plant metrics...</div>
+            </div>
+            <div id="history-box"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Professional Section: Significance & Impact -->
+    <section id="about" style="margin-bottom: 4rem;">
+      <h2 class="section-title"><i class="fa-solid fa-earth-americas"></i> Significance & Agriculture Impact</h2>
+      <div class="grid-3">
+        <div class="feature-card">
+          <i class="fa-solid fa-wheat-awn-circle-exclamation"></i>
+          <h4>Mitigating Yield Losses</h4>
+          <p>Global crop production suffers up to 40% annual loss due to plant pests and diseases. Early detection enables localized treatments before pathogen transmission spreads.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-solid fa-flask-vial"></i>
+          <h4>Targeted Pesticide Use</h4>
+          <p>Instead of blanket spraying entire fields with chemical fungicides, farmers can pinpoint exact infection clusters, reducing chemical run-off and environmental damage.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-solid fa-wifi"></i>
+          <h4>Offline Edge Intelligence</h4>
+          <p>By compiling models via TensorFlow.js, diagnosis occurs client-side in the browser, enabling smart farming in remote rural zones with poor internet access.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Professional Section: Target Applications -->
+    <section id="uses" style="margin-bottom: 4rem;">
+      <h2 class="section-title"><i class="fa-solid fa-users-gear"></i> Target Audiences & Use Cases</h2>
+      <div class="grid-3">
+        <div class="feature-card">
+          <i class="fa-solid fa-tractor"></i>
+          <h4>Smallholder Farmers</h4>
+          <p>Instantly identifies subtle symptoms without needing to hire expensive agricultural consultants or wait days for laboratory soil/plant diagnostics.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-solid fa-microscope"></i>
+          <h4>Botanical Researchers</h4>
+          <p>Enables rapid automated field scoring and phenotypic disease tracking during crop breeding programs and resistance trials.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fa-solid fa-house-chimney-window"></i>
+          <h4>Hydroponics & Greenhouses</h4>
+          <p>Integrates into automated camera rigs to continuously scan closed-loop greenhouse crops for early fungal outbreaks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Science Panel for Judges with Interactive ROI Calculator -->
+    <section id="science" class="glass-card">
+      <h2 class="section-title"><i class="fa-solid fa-graduation-cap"></i> Exhibition Science & Math Panel</h2>
+      <p style="color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6;">
+        PhytoVision AI uses <strong>Transfer Learning</strong> on top of a <strong>MobileNet Architecture</strong>. MobileNet utilizes depthwise separable convolutions to reduce parameters while maintaining high feature extraction accuracy for mobile/browser platforms.
+      </p>
+
+      <div class="calc-container">
+        <div class="calc-controls">
+          <h3><i class="fa-solid fa-calculator"></i> Economic Impact Simulator</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Simulate how early AI disease detection reduces financial crop loss for a standard 10-acre farm plot.</p>
+
+          <label>Farm Size (Acres): <span id="acres-val" style="color:var(--accent-green);">10</span></label>
+          <input type="range" class="calc-slider" id="acres-slider" min="1" max="100" value="10" oninput="updateCalc()">
+
+          <label>Estimated Crop Market Value ($/Acre): <span id="val-val" style="color:var(--accent-green);">$1,200</span></label>
+          <input type="range" class="calc-slider" id="val-slider" min="500" max="5000" step="100" value="1200" oninput="updateCalc()">
+        </div>
+
+        <div class="calc-output">
+          <span style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px;">Estimated Annual Savings</span>
+          <div class="calc-output-val" id="savings-out">$3,600</div>
+          <p style="font-size: 0.85rem; color: var(--accent-mint);">*Based on preventing an average 30% unmitigated disease spread.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>🍃 <strong>PhytoVision AI</strong> — Developed for Class 11 Science Exhibition</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem; color: rgba(255,255,255,0.4);">AI-assisted screening only — confirm serious outbreaks with an agricultural expert. Powered by TensorFlow.js, Teachable Machine & Google MobileNet Engine.</p>
+  </footer>
+
+  <!-- Embedded Logic Script -->
+  <script>
+    // YOUR TEACHABLE MACHINE MODEL URL IS PLACED HERE:
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/Q4ka1dP1t/";
+
+    let model, maxPredictions;
+    let webcamStream = null;
+
+    // Background floating leaves animation
+    function createLeaves() {
+      const container = document.getElementById('leaves-bg');
+      const leafIcons = ['fa-leaf', 'fa-seedling', 'fa-plant-wilt'];
+      for (let i = 0; i < 15; i++) {
+        const leaf = document.createElement('i');
+        const icon = leafIcons[Math.floor(Math.random() * leafIcons.length)];
+        leaf.className = `fa-solid ${icon} leaf`;
+        leaf.style.left = `${Math.random() * 100}%`;
+        leaf.style.animationDelay = `${Math.random() * 15}s`;
+        leaf.style.animationDuration = `${12 + Math.random() * 10}s`;
+        container.appendChild(leaf);
+      }
+    }
+    createLeaves();
+
+    // Tab Switching Logic
+    function switchTab(type) {
+      document.getElementById('tab-file').classList.toggle('active', type === 'file');
+      document.getElementById('tab-cam').classList.toggle('active', type === 'cam');
+      document.getElementById('file-ui').style.display = type === 'file' ? 'block' : 'none';
+      document.getElementById('cam-ui').style.display = type === 'cam' ? 'block' : 'none';
+
+      if (type !== 'cam' && webcamStream) {
+        stopWebcam();
+      }
+    }
+
+    // ===== Model loading =====
+    let isBusy = false, lastScan = null, currentObjectUrl = null;
+
+    function setStatus(html) {
+      const el = document.getElementById('model-status');
+      if (el) el.innerHTML = html;
+    }
+
+    async function initModel() {
+      if (model) return model;
+      try {
+        setStatus('<i class="fa-solid fa-spinner spin"></i> Loading AI model…');
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+        setStatus('✅ AI model ready (' + maxPredictions + ' classes)');
+        return model;
+      } catch (e) {
+        setStatus('⚠️ Could not load the model. Check your internet connection and MODEL_URL.');
+        throw e;
+      }
+    }
+    window.addEventListener('load', () => initModel().catch(() => {}));
+
+    // ===== Disease knowledge base (matched by keywords in the model's class names) =====
+    const DISEASES = [
+      { keys: ['healthy'], type: 'None', sev: 'None',
+        symptoms: 'Uniform green colour, no spots, lesions, curling or mould.',
+        cause: 'No pathogen detected in this image.',
+        treat: 'No treatment needed. Continue balanced watering and fertilisation.',
+        prevent: 'Scout weekly, keep tools clean, water at the base and keep good airflow.' },
+      { keys: ['early blight', 'alternaria'], type: 'Fungal (Alternaria)', sev: 'Moderate',
+        symptoms: 'Brown spots with concentric rings (target pattern) and a yellow halo, starting on older lower leaves.',
+        cause: 'Alternaria fungus, favoured by warm, humid weather and plant stress.',
+        treat: 'Remove infected leaves. Apply a protectant fungicide (e.g. chlorothalonil, mancozeb or copper) following the label.',
+        prevent: 'Rotate crops for 2–3 years, mulch soil, use drip irrigation and stake plants for airflow.' },
+      { keys: ['late blight', 'phytophthora'], type: 'Oomycete (Phytophthora)', sev: 'High',
+        symptoms: 'Large, water-soaked dark patches; white fuzzy growth on leaf underside in humid weather; rapid collapse.',
+        cause: 'Phytophthora infestans, spreads fast in cool, wet conditions.',
+        treat: 'Remove and destroy infected plants (do not compost). Use protectant fungicides before spread; ask your local extension office for approved products.',
+        prevent: 'Plant certified disease-free material, avoid overhead watering, destroy volunteer plants.' },
+      { keys: ['bacterial', 'xanthomonas'], type: 'Bacterial', sev: 'Moderate',
+        symptoms: 'Small dark, greasy water-soaked spots with yellow halos; centres may drop out leaving holes.',
+        cause: 'Xanthomonas bacteria spread by water splash, tools and infected seed.',
+        treat: 'Remove badly infected leaves. Apply copper-based bactericide early in the day per label directions.',
+        prevent: 'Use clean seed, avoid overhead irrigation and handling wet plants, rotate crops 1–2 years.' },
+      { keys: ['leaf mold', 'leaf mould', 'passalora', 'fulvia'], type: 'Fungal', sev: 'Moderate',
+        symptoms: 'Pale yellow patches on top of leaf with olive-grey velvety mould underneath.',
+        cause: 'Passalora fulva, common in high-humidity greenhouses.',
+        treat: 'Improve ventilation, remove infected leaves, apply a suitable fungicide.',
+        prevent: 'Keep humidity below ~85%, space plants, avoid wetting foliage.' },
+      { keys: ['septoria'], type: 'Fungal (Septoria)', sev: 'Moderate',
+        symptoms: 'Many small circular spots with grey centres and dark borders, tiny black dots inside.',
+        cause: 'Septoria fungus splashed from soil and debris during wet weather.',
+        treat: 'Remove lower infected leaves and apply protectant fungicide (chlorothalonil or copper).',
+        prevent: 'Mulch, rotate crops, clear plant debris after harvest.' },
+      { keys: ['powdery'], type: 'Fungal', sev: 'Moderate',
+        symptoms: 'White powdery coating on leaf surfaces, leaf yellowing and distortion.',
+        cause: 'Powdery mildew fungi; thrive in warm days, cool nights and dry leaf surfaces.',
+        treat: 'Apply sulphur, potassium bicarbonate or a labelled fungicide; remove heavily affected leaves.',
+        prevent: 'Plant resistant varieties, ensure sunlight and spacing.' },
+      { keys: ['rust'], type: 'Fungal (Rust)', sev: 'Moderate',
+        symptoms: 'Orange, brown or rust-coloured pustules, usually on the underside of leaves.',
+        cause: 'Rust fungi spread by wind-borne spores in humid conditions.',
+        treat: 'Remove infected leaves and apply a labelled rust fungicide early.',
+        prevent: 'Use resistant varieties, avoid leaf wetness, remove crop residue.' },
+      { keys: ['mosaic', 'virus', 'curl', 'viral'], type: 'Viral', sev: 'High',
+        symptoms: 'Mottled light/dark green mosaic, leaf curling or distortion, stunted growth.',
+        cause: 'Plant viruses spread by aphids, whiteflies, tools and hands.',
+        treat: 'No cure. Remove and destroy infected plants, control insect vectors, disinfect tools.',
+        prevent: 'Use resistant varieties and certified seed, control weeds and insects, wash hands after tobacco use.' },
+      { keys: ['mite', 'spider'], type: 'Pest (Mites)', sev: 'Moderate',
+        symptoms: 'Fine yellow stippling, bronzing and thin webbing, especially on leaf undersides.',
+        cause: 'Spider mites, worst in hot, dry conditions.',
+        treat: 'Spray leaves with water, use insecticidal soap or neem oil, introduce predatory mites.',
+        prevent: 'Keep plants well watered and avoid dusty conditions.' },
+      { keys: ['gray leaf', 'grey leaf', 'cercospora', 'scab', 'black rot', 'anthracnose', 'leaf spot', 'blight', 'spot'], type: 'Fungal leaf disease', sev: 'Moderate',
+        symptoms: 'Spots, lesions or blighted areas on leaf tissue that may merge as the disease advances.',
+        cause: 'Fungal pathogens favoured by prolonged leaf wetness.',
+        treat: 'Remove infected leaves and apply a fungicide registered for your crop.',
+        prevent: 'Rotate crops, space plants, water at the base and clean up debris.' }
+    ];
+    const DEFAULT_DISEASE = { type: 'Unclassified', sev: 'Low',
+      symptoms: 'Pattern not in the built-in guide.',
+      cause: 'Could be fungal, bacterial, viral, pest or nutrient related.',
+      treat: 'Isolate the plant, photograph several leaves and consult a local agricultural expert for a lab test.',
+      prevent: 'Maintain good drainage, airflow and field hygiene.' };
+
+    function findDisease(name) {
+      const n = name.toLowerCase().replace(/[_\-]+/g, ' ');
+      return DISEASES.find(d => d.keys.some(k => n.includes(k))) || DEFAULT_DISEASE;
+    }
+
+    // ===== Image quality check =====
+    function analyzeQuality(el) {
+      const warnings = [];
+      try {
+        const s = 64, c = document.createElement('canvas');
+        c.width = c.height = s;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(el, 0, 0, s, s);
+        const d = ctx.getImageData(0, 0, s, s).data;
+        let lum = 0, plant = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          lum += 0.299 * r + 0.587 * g + 0.114 * b;
+          if ((g > r * 0.95 && g > b * 1.1) || (r >= g && g > b * 1.2 && r < 220)) plant++;
+        }
+        lum /= (s * s); plant /= (s * s);
+        if (lum < 45) warnings.push('Image is very dark — retake in better light.');
+        if (lum > 215) warnings.push('Image is overexposed — avoid glare or direct flash.');
+        if (plant < 0.2) warnings.push('Little leaf area detected — make sure a single leaf fills the frame.');
+      } catch (e) {}
+      return warnings;
+    }
+
+    // ===== Prediction (original + mirrored image averaged for stability) =====
+    async function predictAveraged(el) {
+      const a = await model.predict(el, false);
+      const b = await model.predict(el, true);
+      return a.map((p, i) => ({ className: p.className, probability: (p.probability + b[i].probability) / 2 }));
+    }
+
+    async function classifyElement(element) {
+      if (isBusy) return;
+      isBusy = true;
+      document.getElementById('result-placeholder').style.display = 'none';
+      document.getElementById('result-content').style.display = 'block';
+      document.getElementById('top-class').innerHTML = '<i class="fa-solid fa-spinner spin"></i> Analyzing…';
+      try {
+        await initModel();
+        const preds = await predictAveraged(element);
+        preds.sort((a, b) => b.probability - a.probability);
+        renderResult(preds, analyzeQuality(element));
+      } catch (e) {
+        console.error(e);
+        document.getElementById('top-class').innerText = 'Analysis failed';
+        document.getElementById('treatment-text').innerHTML = '<p>Could not run the model. Check your internet connection and try again.</p>';
+      } finally {
+        isBusy = false;
+      }
+    }
+
+    function renderResult(preds, warnings) {
+      const top = preds[0], second = preds[1];
+      const pct = top.probability * 100;
+      const margin = second ? pct - second.probability * 100 : pct;
+      const tier = (pct >= 80 && margin >= 20) ? 'high' : (pct >= 60 ? 'moderate' : 'low');
+      const isHealthy = top.className.toLowerCase().includes('healthy');
+
+      const pill = document.getElementById('status-pill');
+      const title = document.getElementById('top-class');
+      const verdict = document.getElementById('verdict');
+      verdict.className = 'verdict ' + tier;
+
+      if (tier === 'low') {
+        title.innerText = 'Inconclusive';
+        pill.innerText = 'Low Confidence';
+        pill.className = 'status-pill status-uncertain';
+        verdict.innerHTML = '⚠️ Best guess: <strong>' + top.className + '</strong> (' + pct.toFixed(1) + '%). Confidence is too low to trust.';
+      } else {
+        title.innerText = top.className;
+        pill.innerText = isHealthy ? 'Healthy' : 'Pathology Detected';
+        pill.className = 'status-pill ' + (isHealthy ? 'status-healthy' : 'status-diseased');
+        verdict.innerHTML = tier === 'high'
+          ? '✅ High confidence (' + pct.toFixed(1) + '%)'
+          : '🟡 Moderate confidence (' + pct.toFixed(1) + '%) — verify with another leaf photo.';
+      }
+
+      const warn = document.getElementById('quality-warning');
+      warn.style.display = warnings.length ? 'block' : 'none';
+      warn.innerHTML = warnings.map(w => '⚠️ ' + w).join('<br>');
+
+      const list = document.getElementById('confidence-list');
+      list.innerHTML = '';
+      preds.slice(0, 5).forEach(p => {
+        const percent = (p.probability * 100).toFixed(1);
+        const item = document.createElement('div');
+        item.className = 'confidence-item';
+        item.innerHTML = '<div class="confidence-info"><span></span><span>' + percent + '%</span></div>' +
+          '<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:' + percent + '%"></div></div>';
+        item.querySelector('span').textContent = p.className;
+        list.appendChild(item);
+      });
+
+      updateTreatmentAdvice(top.className, tier, pct);
+      lastScan = { name: top.className, pct: pct, tier: tier, preds: preds, warnings: warnings, time: new Date() };
+      if (tier !== 'low') saveHistory(lastScan);
+      renderHistory();
+    }
+
+    function updateTreatmentAdvice(className, tier, pct) {
+      const box = document.getElementById('treatment-text');
+      if (tier === 'low') {
+        box.innerHTML = '<p><strong>Result not reliable.</strong> Retake the photo: one leaf, good daylight, in focus, plain background. If the leaf shows symptoms but the AI stays unsure, consult an agricultural expert.</p>' +
+          '<p class="disclaimer">This tool only recognises the diseases its model was trained on.</p>';
+        return;
+      }
+      const d = findDisease(className);
+      box.innerHTML =
+        '<p><span class="sev-tag sev-' + d.sev + '">Severity: ' + d.sev + '</span><span class="sev-tag">' + d.type + '</span></p>' +
+        '<p><strong>Symptoms:</strong> ' + d.symptoms + '</p>' +
+        '<p><strong>Cause:</strong> ' + d.cause + '</p>' +
+        '<p><strong>Treatment:</strong> ' + d.treat + '</p>' +
+        '<p><strong>Prevention:</strong> ' + d.prevent + '</p>' +
+        '<button class="action-btn" onclick="downloadReport()"><i class="fa-solid fa-file-arrow-down"></i> Download Report</button>' +
+        '<p class="disclaimer">AI screening result, not a lab diagnosis. Always follow pesticide label directions and local regulations.</p>';
+    }
+
+    // ===== Scan history (stored locally in the browser) =====
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem('phyto_history') || '[]'); } catch (e) { return []; }
+    }
+    function saveHistory(s) {
+      try {
+        const h = getHistory();
+        h.unshift({ name: s.name, pct: s.pct.toFixed(1), t: s.time.toLocaleTimeString() });
+        localStorage.setItem('phyto_history', JSON.stringify(h.slice(0, 5)));
+      } catch (e) {}
+    }
+    function renderHistory() {
+      const h = getHistory(), box = document.getElementById('history-box');
+      box.innerHTML = h.length ? '<strong>Recent scans</strong>' : '';
+      h.forEach(r => {
+        const row = document.createElement('div');
+        row.innerHTML = '<span></span><span>' + r.pct + '% · ' + r.t + '</span>';
+        row.querySelector('span').textContent = r.name;
+        box.appendChild(row);
+      });
+    }
+
+    function downloadReport() {
+      if (!lastScan) return;
+      const d = findDisease(lastScan.name);
+      const lines = [
+        'PhytoVision AI - Diagnosis Report',
+        'Date: ' + lastScan.time.toLocaleString(),
+        'Diagnosis: ' + lastScan.name + ' (' + lastScan.pct.toFixed(1) + '% confidence)',
+        'Type: ' + d.type + ' | Severity: ' + d.sev, '',
+        'Symptoms: ' + d.symptoms, 'Cause: ' + d.cause,
+        'Treatment: ' + d.treat, 'Prevention: ' + d.prevent, '',
+        'All predictions:'
+      ].concat(lastScan.preds.map(p => ' - ' + p.className + ': ' + (p.probability * 100).toFixed(1) + '%'))
+       .concat(['', 'Note: AI screening only. Confirm with an agricultural expert.']);
+      const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'leaf-diagnosis-report.txt'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // ===== File handling (click + drag & drop) =====
+    function showImage(src) {
+      const img = document.getElementById('preview-img');
+      document.getElementById('preview-container').style.display = 'block';
+      img.onload = () => classifyElement(img);
+      img.onerror = () => alert('This image could not be read. Try another file.');
+      img.src = src;
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { alert('Please select an image file.'); return; }
+      if (file.size > 10 * 1024 * 1024) { alert('Image is larger than 10 MB. Please use a smaller photo.'); return; }
+      if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+      currentObjectUrl = URL.createObjectURL(file);
+      showImage(currentObjectUrl);
+    }
+
+    function handleFileSelect(event) {
+      handleFile(event.target.files[0]);
+      event.target.value = '';
+    }
+
+    (function setupDrop() {
+      const area = document.querySelector('.upload-area');
+      ['dragenter', 'dragover'].forEach(ev => area.addEventListener(ev, e => { e.preventDefault(); area.classList.add('drag'); }));
+      ['dragleave', 'drop'].forEach(ev => area.addEventListener(ev, e => { e.preventDefault(); area.classList.remove('drag'); }));
+      area.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+    })();
+
+    // ===== Camera: capture a still frame for a stable diagnosis =====
+    async function startWebcam() {
+      const video = document.getElementById('webcam-video');
+      try {
+        stopWebcam();
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+        video.srcObject = webcamStream;
+        video.style.display = 'block';
+        await video.play();
+        document.getElementById('capture-btn').style.display = 'flex';
+      } catch (err) {
+        alert('Camera access denied or not available. Camera needs HTTPS (GitHub Pages works).');
+      }
+    }
+
+    function captureFrame() {
+      const v = document.getElementById('webcam-video');
+      if (!v.videoWidth) return;
+      const c = document.createElement('canvas');
+      c.width = v.videoWidth; c.height = v.videoHeight;
+      c.getContext('2d').drawImage(v, 0, 0);
+      showImage(c.toDataURL('image/jpeg', 0.92));
+    }
+
+    function stopWebcam() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(t => t.stop());
+        webcamStream = null;
+      }
+      document.getElementById('webcam-video').style.display = 'none';
+      document.getElementById('capture-btn').style.display = 'none';
+    }
+    renderHistory();
+
+    // Interactive ROI Calculator Function
+    function updateCalc() {
+      const acres = document.getElementById('acres-slider').value;
+      const val = document.getElementById('val-slider').value;
+
+      document.getElementById('acres-val').innerText = acres;
+      document.getElementById('val-val').innerText = `$${Number(val).toLocaleString()}`;
+
+      // Calculate 30% yield loss protection
+      const savings = Math.round(acres * val * 0.3);
+      document.getElementById('savings-out').innerText = `$${savings.toLocaleString()}`;
+    }
+  </script>
+</body>
+</html>
